@@ -5,7 +5,7 @@ const TelegramBot = require("node-telegram-bot-api");
 const TOKEN = "7262967517:AAGXzAJ5sSIxpSLDLnURTBVazyt-xBC7KZ0";
 const server = express();
 const bot = new TelegramBot(TOKEN, { polling: true });
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 10000;
 const gameName = "cryptocoin";
 const queries = {};
 
@@ -86,6 +86,14 @@ server.get("/highscore/:score", (req, res, next) => {
             console.error('Error setting game score:', err);
             next(err);
         });
+});
+
+server.on('error', (error) => {
+    console.error('Server error:', error);
+});
+
+bot.on('message', (msg) => {
+    console.log('Received message:', msg);
 });
 
 server.listen(port, () => {
