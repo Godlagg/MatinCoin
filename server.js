@@ -1,14 +1,16 @@
 const express = require("express");
 const path = require("path");
 const TelegramBot = require("node-telegram-bot-api");
+const axios = require("axios"); // Для отправки запросов
 
-const TOKEN = "7262967517:AAGXzAJ5sSIxpSLDLnURTBVazyt-xBC7KZ0";
+const TOKEN = "YOUR_TELEGRAM_BOT_TOKEN";
 const server = express();
 const bot = new TelegramBot(TOKEN, { polling: true });
 const port = process.env.PORT || 10000;
 const gameName = "cryptocoin";
 const queries = {};
 
+// Устанавливаем папку со статикой
 server.use(express.static(path.join(__dirname, 'MatinCoin')));
 
 // Команда /help
@@ -43,7 +45,7 @@ bot.on("callback_query", async (query) => {
         }
     } else {
         queries[query.id] = query;
-        let gameUrl = "https://godlagg.github.io/MatinCoin/";
+        let gameUrl = "https://your-frontend-url.com";
         try {
             await bot.answerCallbackQuery(query.id, {
                 url: gameUrl
@@ -88,14 +90,20 @@ server.get("/highscore/:score", (req, res, next) => {
         });
 });
 
-server.on('error', (error) => {
-    console.error('Server error:', error);
-});
+// Периодический запрос для поддержания активности
+const keepAliveInterval = 5 * 60 * 1000; // 5 минут
+const keepAliveUrl = `http://localhost:${port}`; // URL для поддержания активности
 
-bot.on('message', (msg) => {
-    console.log('Received message:', msg);
-});
+setInterval(async () => {
+    try {
+        await axios.get(keepAliveUrl);
+        console.log('Keep-alive ping successful');
+    } catch (error) {
+        console.error('Error during keep-alive ping:', error);
+    }
+}, keepAliveInterval);
 
+// Запуск сервера
 server.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
