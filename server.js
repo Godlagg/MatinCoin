@@ -3,9 +3,10 @@ const path = require("path");
 const TelegramBot = require("node-telegram-bot-api");
 const axios = require("axios"); // Для отправки запросов
 
-const TOKEN = "YOUR_TELEGRAM_BOT_TOKEN";
+const TOKEN = "7262967517:AAGXzAJ5sSIxpSLDLnURTBVazyt-xBC7KZ0";
 const server = express();
-const bot = new TelegramBot(TOKEN, { polling: true });
+//const bot = new TelegramBot(TOKEN, { polling: true });
+const bot = new TelegramBot(TOKEN);
 const port = process.env.PORT || 10000;
 const gameName = "cryptocoin";
 const queries = {};
@@ -45,7 +46,7 @@ bot.on("callback_query", async (query) => {
         }
     } else {
         queries[query.id] = query;
-        let gameUrl = "https://your-frontend-url.com";
+        let gameUrl = "https://godlagg.github.io/MatinCoin/";
         try {
             await bot.answerCallbackQuery(query.id, {
                 url: gameUrl
