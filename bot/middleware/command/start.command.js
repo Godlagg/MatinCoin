@@ -11,8 +11,20 @@ const queries = {};
 server.use(cors({
     origin: '*', // Разрешить все домены
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-  }));
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    preflightContinue: true, // Продолжить обработку preflight-запросов
+    optionsSuccessStatus: 204 // Статус для успешных preflight-запросов
+}));
+
+server.options('*', cors());
+
+server.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    next();
+});
+
 server.use(express.json());
 
 
