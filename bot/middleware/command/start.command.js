@@ -1,6 +1,4 @@
-const { bot } = require('../../connections/token.connection');
 const express = require("express");
-const path = require("path");
 const cors = require('cors');
 const { saveUser } = require("../../common/sequelize/saveUser.sequelize");
 const UserModel = require("../../models/user.model");
@@ -8,6 +6,7 @@ const server = express();
 const gameName = "cryptocoin";
 const queries = {};
 
+// Настройка CORS
 server.use(cors({
     origin: '*', // Разрешить все домены
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -16,87 +15,74 @@ server.use(cors({
     optionsSuccessStatus: 204 // Статус для успешных preflight-запросов
 }));
 
-server.options('*', cors());
-
-server.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    next();
-});
-
 server.use(express.json());
+server.use(express.urlencoded({ extended: true }));
 
-
-server.post('/debug', (req, res) => {
-    const { message } = req.body;
-    console.log('Received request body:', req.body); // Логирование всего тела запроса
-    console.log(`Debug message from Unity: ${message}`);
-    
-    // Добавляем заголовок, чтобы избежать предупреждения ngrok
-    res.setHeader('ngrok-skip-browser-warning', 'skip-browser-warning');
-    
-    res.status(200).send('Message received');
+// Обработка GET запроса для получения логина
+server.get('/getLogin', (req, res) => {
+    // Пример для теста: возвращаем статичный логин
+    // В реальной ситуации вы получите логин из базы данных или другого источника
+    const login = 'exampleLogin'; 
+    res.json(login);
 });
 
-server.get('/getLogin', async (req, res) => {
-    const { login } = req.query;
-
-    if (!login) {
-        return res.status(400).send('Login is required');
-    }
-
+// Обработка GET запроса для получения данных пользователя по логину
+server.get('/user/:login', async (req, res) => {
     try {
-        const user = await UserModel.findOne({ where: { login } });
+        const { login } = req.params;
+        const user = await UserModel.findOne({ where: { login: login } });
 
         if (!user) {
-            return res.status(404).send('User not found');
+            return res.status(404).json({ error: 'User not found' });
         }
 
-        res.setHeader('ngrok-skip-browser-warning', 'skip-browser-warning');
-        res.status(200).json({ login: user.login });
+        // Возвращаем данные пользователя в формате JSON
+        res.json({
+            coins: user.coins,
+            earnperminute: user.earnperminute,
+            earnperminuteadd: user.earnperminuteadd,
+            refreshCount: user.refreshCount,
+            dailycombotryes: user.dailycombotryes,
+            lvlplayer: user.lvlplayer,
+            battery: user.battery,
+            multitap: user.multitap,
+            value: user.value,
+            valuecount: user.valuecount,
+            lvlplayervalue: user.lvlplayervalue
+        });
     } catch (error) {
         console.error('Error fetching user data:', error);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-
+// Обработка POST запроса для обновления данных пользователя
 server.post('/user/:login', async (req, res) => {
-    const login = req.params.login;
-    const { coins, earnperminute, earnperminuteadd, refreshCount, dailycombotryes, lvlplayer, battery, multitap, value, valuecount, lvlplayervalue } = req.body;
-
     try {
-        const user = await UserModel.findOne({ where: { login } });
+        const { login } = req.params;
+        const userData = req.body;
 
-        if (!user) {
-            return res.status(404).send('User not found');
+        // Обновляем данные пользователя в базе данных
+        const [updated] = await UserModel.update(userData, { where: { login: login } });
+
+        if (updated) {
+            res.json({ message: 'User data updated successfully' });
+        } else {
+            res.status(404).json({ error: 'User not found' });
         }
-
-        await UserModel.update({
-            coins,
-            earnperminute,
-            earnperminuteadd,
-            refreshCount,
-            dailycombotryes,
-            lvlplayer,
-            battery,
-            multitap,
-            value,
-            valuecount,
-            lvlplayervalue
-        }, {
-            where: { login }
-        });
-
-        res.setHeader('ngrok-skip-browser-warning', 'skip-browser-warning');
-        res.status(200).send('User data updated successfully');
     } catch (error) {
         console.error('Error updating user data:', error);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
+// Обработка POST запроса для отладки
+server.post('/debug', (req, res) => {
+    console.log('Debug message:', req.body.message);
+    res.json({ status: 'Debug message received' });
+});
+
+// Обработка POST запроса для аутентификации
 server.post('/authenticate', async (req, res) => {
     const { login, username } = req.body;
 
@@ -106,8 +92,7 @@ server.post('/authenticate', async (req, res) => {
 
     try {
         const result = await saveUser(login, username);
-        res.setHeader('ngrok-skip-browser-warning', 'skip-browser-warning');
-        res.status(200).json({ message: result });
+        res.json({ message: result });
     } catch (error) {
         console.error('Error saving user data:', error);
         res.status(500).send('Internal Server Error');
@@ -155,7 +140,7 @@ bot.on('callback_query', async (ctx) => {
                 console.log(result);
                 
                 // Передаем логин в Unity через URL
-                const unityUrl = `https://b13c-91-222-218-191.ngrok-free.app/authenticate`;
+                const unityUrl = `https://ccca-2-63-102-71.ngrok-free.app/authenticate`;
                 await fetch(unityUrl, {
                     method: 'POST',
                     headers: {
@@ -174,7 +159,7 @@ bot.on('callback_query', async (ctx) => {
     }
 });
 
-// Обработка inline queries
+// Обработка inline запросов
 bot.on('inline_query', (ctx) => {
     ctx.answerInlineQuery([{
         type: 'game',
@@ -208,21 +193,7 @@ server.get('/highscore/:score', (req, res, next) => {
         });
 });
 
-const port = process.env.PORT || 5000;
-server.listen(port, '0.0.0.0', () => {
-    console.log(`Server is running on port ${port}`);
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
-
-server.use((req, res, next) => {
-    console.log(`Request Method: ${req.method}`);
-    console.log(`Request URL: ${req.url}`);
-    console.log(`Request Body: ${JSON.stringify(req.body)}`);
-    next();
-});
-
-server.use((req, res, next) => {
-    res.setHeader('ngrok-skip-browser-warning', 'skip-browser-warning');
-    next();
-});
-
-server.use(express.static(path.join(__dirname, 'MatinCoin')));
