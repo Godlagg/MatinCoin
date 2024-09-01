@@ -8,18 +8,47 @@ const server = express();
 const gameName = "cryptocoin";
 const queries = {};
 
-server.use(cors());
+server.use(cors({
+    origin: '*', // Разрешить все домены
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  }));
 server.use(express.json());
-server.use(express.static(path.join(__dirname, 'MatinCoin')));
 
 
-// Обработка сообщений от Unity
 server.post('/debug', (req, res) => {
     const { message } = req.body;
     console.log('Received request body:', req.body); // Логирование всего тела запроса
     console.log(`Debug message from Unity: ${message}`);
+    
+    // Добавляем заголовок, чтобы избежать предупреждения ngrok
+    res.setHeader('ngrok-skip-browser-warning', 'skip-browser-warning');
+    
     res.status(200).send('Message received');
 });
+
+server.get('/getLogin', async (req, res) => {
+    const { login } = req.query;
+
+    if (!login) {
+        return res.status(400).send('Login is required');
+    }
+
+    try {
+        const user = await UserModel.findOne({ where: { login } });
+
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
+
+        res.setHeader('ngrok-skip-browser-warning', 'skip-browser-warning');
+        res.status(200).json({ login: user.login });
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 
 server.post('/user/:login', async (req, res) => {
     const login = req.params.login;
@@ -32,7 +61,6 @@ server.post('/user/:login', async (req, res) => {
             return res.status(404).send('User not found');
         }
 
-        // Обновляем данные пользователя
         await UserModel.update({
             coins,
             earnperminute,
@@ -49,6 +77,7 @@ server.post('/user/:login', async (req, res) => {
             where: { login }
         });
 
+        res.setHeader('ngrok-skip-browser-warning', 'skip-browser-warning');
         res.status(200).send('User data updated successfully');
     } catch (error) {
         console.error('Error updating user data:', error);
@@ -65,6 +94,7 @@ server.post('/authenticate', async (req, res) => {
 
     try {
         const result = await saveUser(login, username);
+        res.setHeader('ngrok-skip-browser-warning', 'skip-browser-warning');
         res.status(200).json({ message: result });
     } catch (error) {
         console.error('Error saving user data:', error);
@@ -170,3 +200,17 @@ const port = process.env.PORT || 5000;
 server.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
 });
+
+server.use((req, res, next) => {
+    console.log(`Request Method: ${req.method}`);
+    console.log(`Request URL: ${req.url}`);
+    console.log(`Request Body: ${JSON.stringify(req.body)}`);
+    next();
+});
+
+server.use((req, res, next) => {
+    res.setHeader('ngrok-skip-browser-warning', 'skip-browser-warning');
+    next();
+});
+
+server.use(express.static(path.join(__dirname, 'MatinCoin')));
