@@ -1,2 +1,17 @@
 .env
 node_modules
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+*.csproj
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.suo
+*.unityproj
+*.apk
+*.aab
