@@ -1,4 +1,6 @@
+const { bot } = require('../../connections/token.connection');
 const express = require("express");
+const path = require("path");
 const cors = require('cors');
 const { saveUser } = require("../../common/sequelize/saveUser.sequelize");
 const UserModel = require("../../models/user.model");
@@ -140,7 +142,7 @@ bot.on('callback_query', async (ctx) => {
                 console.log(result);
                 
                 // Передаем логин в Unity через URL
-                const unityUrl = `https://ccca-2-63-102-71.ngrok-free.app/authenticate`;
+                const unityUrl = `https://03d8-2-63-102-71.ngrok-free.app/authenticate`;
                 await fetch(unityUrl, {
                     method: 'POST',
                     headers: {
