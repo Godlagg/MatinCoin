@@ -1,5 +1,6 @@
 const { bot } = require('../../connections/token.connection');
 const express = require("express");
+const session = require('express-session');
 const path = require("path");
 const cors = require('cors');
 const { saveUser } = require("../../common/sequelize/saveUser.sequelize");
@@ -11,6 +12,13 @@ const queries = {};
 
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
+
+server.use(session({
+    secret: 'y41!cosu7^fj@#x--#41!9_u8lg&+xw%v03%*e^&5h0lk*b&3!', // Секретный ключ для подписи идентификаторов сессий
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // Установите в true для HTTPS
+}));
 
     // Настройка CORS
 server.use(cors({
@@ -120,6 +128,10 @@ server.post('/authenticate', async (req, res) => {
 
     try {
         const result = await saveUser(login, username);
+        
+        // Сохранение логина в сессии
+        req.session.login = login;
+        
         res.json({ message: result });
     } catch (error) {
         console.error('Error saving user data:', error);
