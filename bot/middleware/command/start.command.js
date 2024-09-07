@@ -24,18 +24,21 @@ server.use(cors({
 // Обработка GET запроса для получения логина
 server.get('/getLogin', async (req, res) => {
     try {
-        const login = req.session?.login;
-        console.log('Retrieved login from session:', login); // Логирование
+        // Получение логина текущего пользователя из сессии или другого источника
+        const login = req.session?.login; // Или другой способ получения логина
 
         if (!login) {
             return res.status(400).json({ error: 'Login is not available' });
         }
 
+        // Поиск пользователя по логину
         const user = await UserModel.findOne({ where: { login } });
+
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        // Возвращаем данные пользователя в формате JSON
         res.json({ login: user.login });
     } catch (error) {
         console.error('Error fetching login:', error);
@@ -151,7 +154,7 @@ bot.on('callback_query', async (ctx) => {
 
     if (query.game_short_name !== gameName) {
         try {
-            await ctx.answerCbQuery(`Sorry, '${query.game_short_name}' is not available.`);
+            await ctx.answerCbQuery(Sorry, '${query.game_short_name}' is not available.);
         } catch (error) {
             console.error('Error answering callback query:', error);
         }
@@ -168,7 +171,7 @@ bot.on('callback_query', async (ctx) => {
                 console.log(result);
                 
                 // Передаем логин в Unity через URL
-                const unityUrl = `https://7f72-91-222-218-191.ngrok-free.app/authenticate`;
+                const unityUrl = https://7f72-91-222-218-191.ngrok-free.app/authenticate;
                 await fetch(unityUrl, {
                     method: 'POST',
                     headers: {
@@ -223,5 +226,5 @@ server.get('/highscore/:score', (req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(Server is running on port ${PORT});
 });
