@@ -16,17 +16,31 @@ server.use(express.urlencoded({ extended: true }));
 server.use(cors({
     origin: '*', // Разрешить все домены
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
     preflightContinue: true, // Продолжить обработку preflight-запросов
     optionsSuccessStatus: 204 // Статус для успешных preflight-запросов
 }));
 
 // Обработка GET запроса для получения логина
-server.get('/getLogin', (req, res) => {
-    // Пример для теста: возвращаем статичный логин
-    // В реальной ситуации вы получите логин из базы данных или другого источника
-    const login = 'exampleLogin'; 
-    res.json(login);
+server.get('/getLogin', async (req, res) => {
+    try {
+        const login = req.session?.login;
+        console.log('Retrieved login from session:', login); // Логирование
+
+        if (!login) {
+            return res.status(400).json({ error: 'Login is not available' });
+        }
+
+        const user = await UserModel.findOne({ where: { login } });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({ login: user.login });
+    } catch (error) {
+        console.error('Error fetching login:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 // Обработка GET запроса для получения данных пользователя по логину
@@ -61,21 +75,32 @@ server.get('/user/:login', async (req, res) => {
 
 // Обработка POST запроса для обновления данных пользователя
 server.post('/user/:login', async (req, res) => {
+    const login = req.params.login;
+    const userData = req.body;
+    
+    console.log('Received request on /user/:login');
+    console.log('Request body:', req.body);
+    console.log('Request params:', req.params);
+    
     try {
-        const { login } = req.params;
-        const userData = req.body;
-
-        // Обновляем данные пользователя в базе данных
-        const [updated] = await UserModel.update(userData, { where: { login: login } });
-
-        if (updated) {
-            res.json({ message: 'User data updated successfully' });
+        // Найти пользователя
+        const foundUser = await UserModel.findOne({ where: { login } });
+        
+        if (!foundUser) {
+            // Если пользователь не найден, создать нового
+            await UserModel.create({
+                login,
+                ...userData // Создаем пользователя с данными из тела запроса
+            });
+            res.send('User created');
         } else {
-            res.status(404).json({ error: 'User not found' });
+            // Если пользователь найден, обновить данные
+            await UserModel.update(userData, { where: { login } });
+            res.send('User updated');
         }
     } catch (error) {
-        console.error('Error updating user data:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Error handling /user/:login request:', error);
+        res.status(500).send('Internal server error');
     }
 });
 
