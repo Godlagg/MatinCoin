@@ -8,7 +8,11 @@ const server = express();
 const gameName = "cryptocoin";
 const queries = {};
 
-// Настройка CORS
+
+server.use(express.json());
+server.use(express.urlencoded({ extended: true }));
+
+    // Настройка CORS
 server.use(cors({
     origin: '*', // Разрешить все домены
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -16,9 +20,6 @@ server.use(cors({
     preflightContinue: true, // Продолжить обработку preflight-запросов
     optionsSuccessStatus: 204 // Статус для успешных preflight-запросов
 }));
-
-server.use(express.json());
-server.use(express.urlencoded({ extended: true }));
 
 // Обработка GET запроса для получения логина
 server.get('/getLogin', (req, res) => {
@@ -142,7 +143,7 @@ bot.on('callback_query', async (ctx) => {
                 console.log(result);
                 
                 // Передаем логин в Unity через URL
-                const unityUrl = `https://03d8-2-63-102-71.ngrok-free.app/authenticate`;
+                const unityUrl = `https://7f72-91-222-218-191.ngrok-free.app/authenticate`;
                 await fetch(unityUrl, {
                     method: 'POST',
                     headers: {
