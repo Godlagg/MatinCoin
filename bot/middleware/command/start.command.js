@@ -1,3 +1,4 @@
+const { bot } = require('../../connections/token.connection');
 const express = require("express");
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
@@ -19,28 +20,6 @@ server.use(cors({
     preflightContinue: true, // Продолжить обработку preflight-запросов
     optionsSuccessStatus: 204 // Статус для успешных preflight-запросов
 }));
-// Новый GET запрос для получения логина пользователя
-server.get('/getLogin', authenticateToken, (req, res) => {
-    try {
-        const login = req.user.login;
-        res.json({ login });
-    } catch (error) {
-        console.error('Error fetching login:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-// Обработка GET запроса для получения токена
-server.get('/getToken', (req, res) => {
-    try {
-        const login = "your_login"; // Логин текущего пользователя, если применимо
-        const token = jwt.sign({ login }, secretKey, { expiresIn: '1h' });
-        res.json({ token });
-    } catch (error) {
-        console.error('Error generating token:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
 // Middleware для проверки токена
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -54,6 +33,43 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
+
+// Новый GET запрос для получения логина пользователя
+server.get('/getLogin', authenticateToken, (req, res) => {
+    try {
+        const login = req.user.login;
+        res.json({ login });
+    } catch (error) {
+        console.error('Error fetching login:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+// Обработка GET запроса для получения токена
+server.get('/getToken', async (req, res) => {
+    const { login } = req.query; // Получаем логин из параметров запроса
+
+    if (!login) {
+        return res.status(400).json({ error: 'Login is required' });
+    }
+
+    try {
+        // Проверьте, существует ли пользователь с таким логином
+        const user = await UserModel.findOne({ where: { login } });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Генерация токена
+        const token = jwt.sign({ login }, secretKey, { expiresIn: '1h' });
+
+        res.json({ token });
+    } catch (error) {
+        console.error('Error generating token:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 
 // Обработка GET запроса для получения данных пользователя по токену
 server.get('/user', authenticateToken, async (req, res) => {
