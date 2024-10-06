@@ -39,6 +39,9 @@ const authenticateToken = (req, res, next) => {
 
 // Новый GET запрос для получения логина пользователя
 server.get('/getLogin', authenticateToken, (req, res) => {
+    console.log('Request headers:', req.headers);
+    console.log('Request user:', req.user);
+
     try {
         const login = req.user.login;
         res.json({ login });
